@@ -22,6 +22,7 @@ $('head').append(`<script>${Object.keys(config.global).map(varName => {
   const value = config.global[varName]
   return `var ${varName} = ${JSON.stringify(value)};`
 }).join('\n')}</script>`)
+// add favicon
 $('head').append(`<link rel="shortcut icon" type="image/ico" href="${config.head.favicon}"/>`)
 // add some util script
 const prependScriptContent = require('../page')()
@@ -33,7 +34,7 @@ $('head')
   .append(scripts(config.head.scripts))
 
 // add application entry script
-$('head').append(`<script type="module" src="${config.entry}?type=entry"></script>`)
+$('head').append(`<script type="module" data-type="entry" src="${config.entry}?type=entry"></script>`)
 
 const indexHtmlContentParsed = $.html()
 module.exports = function () {

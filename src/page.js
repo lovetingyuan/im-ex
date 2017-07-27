@@ -13,14 +13,18 @@ function page() {
   }
   const es = new EventSource('/sse')
   function reload() {
-    let script = document.createElement('script')
-    script.setAttribute('type', 'module');
-    script.setAttribute('src', 'src/app.js?_t=' + Date.now());
-    document.head.appendChild(script)
-    script.onload = function () {
-      document.head.removeChild(script)
-      script = script.onload = null
-    }
+    const entryScript = document.querySelectorAll('script[data-type=entry]')
+    entryScript.forEach(dom => {
+      const src = dom.getAttribute('src')
+      let script = document.createElement('script')
+      script.setAttribute('type', 'module');
+      script.setAttribute('src', src + '&_t=' + Date.now());
+      document.head.appendChild(script)
+      script.onload = function () {
+        document.head.removeChild(script)
+        script = script.onload = null
+      }
+    })
   }
   es.onmessage = function (e) {
     const data = JSON.parse(e.data)

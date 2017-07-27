@@ -12,7 +12,6 @@ const sass = require('sass.js/dist/sass.node')
 const less = require('less')
 const babel = require('babel-core')
 
-
 const isImportNode = path => {
   return (path.type === 'StringLiteral' &&
     path.container.type === 'ImportDeclaration' &&
@@ -57,9 +56,9 @@ function resolveImportModule(path) {
     }
   } else {
     if (!extname(moduleName)) {
-      path.node.value = moduleName + '.js?type=module'
+      path.node.value = moduleName + '.js?type=module&_t=' + Date.now()
     } else {
-      path.node.value = moduleName + '?type=module'
+      path.node.value = moduleName + '?type=module&_t=' + Date.now()
     }
     // path.node.value += ('?_t=' + Date.now())
   }
