@@ -1,0 +1,76 @@
+{
+  "name": "im-ex",
+  "version": "0.1.0",
+  "description": "Site Favorites For Terminal",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "node ./change-pkg.js config.base ./lib && rimraf lib",
+    "build": "babel src -d lib",
+    "lint": "eslint -c package.json ./src --fix --no-eslintrc",
+    "help": "ty-help",
+    "start": "nodemon index.js"
+  },
+  "bin": {
+    "imex": "./bin/imex"
+  },
+  "keywords": [
+    "command",
+    "site",
+    "url",
+    "terminal",
+    "favorites"
+  ],
+  "author": "tingyuan",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "3.19.0",
+    "eslint-config-airbnb": "^15.0.1",
+    "eslint-plugin-import": "2.2.0",
+    "eslint-plugin-jsx-a11y": "5.0.1",
+    "eslint-plugin-react": "7.0.1",
+    "rimraf": "^2.6.1",
+    "ty-help": "^1.0.4"
+  },
+  "dependencies": {
+    "babel-core": "^6.25.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "body-parser": "^1.17.2",
+    "chalk": "^2.0.1",
+    "cheerio": "^1.0.0-rc.2",
+    "connect-timeout": "^1.9.0",
+    "cookie-parser": "^1.4.3",
+    "debug": "^2.6.8",
+    "express": "^4.15.3",
+    "express-sse": "^0.4.1",
+    "helmet": "^3.8.0",
+    "less": "^2.7.2",
+    "morgan": "^1.8.2",
+    "node-notifier": "^5.1.2",
+    "sass.js": "^0.10.5",
+    "serve-favicon": "^2.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lovetingyuan/ty-open.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lovetingyuan/ty-open/issues"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "index.js",
+    "change-pkg.js",
+    "README.md"
+  ],
+  "homepage": "https://github.com/lovetingyuan/ty-open#readme",
+  "eslintIgnore": [
+    "lib",
+    "index.js",
+    "change-pkg.js"
+  ],
+  "config": {
+    "base": "./src"
+  }
+}
