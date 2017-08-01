@@ -3,6 +3,7 @@ const babylon = require('babylon')
 const traverse = require('babel-traverse').default;
 const generate = require('babel-generator').default
 const fs = require('fs')
+const slash = require('slash')
 const { join, resolve, extname, relative } = require('path').posix
 
 const response = require('../services/sendRes')
@@ -12,13 +13,15 @@ const sass = require('sass.js/dist/sass.node')
 const less = require('less')
 const babel = require('babel-core')
 
+const warningModule = {} 
+
 const isImportNode = path => {
   return (path.type === 'StringLiteral' &&
     path.container.type === 'ImportDeclaration' &&
     path.node.type === 'StringLiteral')
 }
 // 'react', 'lodash/map', './list.js'
-const isNodeModuleStyle = value => {
+const isThirdModule = value => {
   return (value[0] !== '/' && value[0] !== '.' && !/^http(s)?:\/\//.test(value))
 }
 
@@ -26,40 +29,47 @@ const nodeModulesPath = value => {
   const list = value.split('/')
   if (list.length === 1) {
     const moduleName = list[0]
-    const modulePkg = join(config.root, 'node_modules', moduleName, 'package.json')
+    const modulePkg = slash(join(config.root, 'node_modules', moduleName, 'package.json'))
     const pkg = require(modulePkg)
-    let esModule = pkg.module || pkg['jsnext:main']
-    const esModuleFallback = pkg.browser || pkg['umd:main'] || pkg.main
-    if (!esModule) {
-      esModule = esModuleFallback
-      console.warn(chalk.bold.red(`Warning: ${moduleName} has no es6 module package`));
+    let mainField = pkg.module || pkg['jsnext:main'], moduleType = 'es6'
+    if (!mainField) {
+      mainField = pkg['umd:main']
+      moduleType = 'umd'
     }
-    if (!extname(esModule)) esModule += '.js'
-    return join('/node_modules', moduleName, esModule) + '?type=thirdModule'
+    if (!mainField) {
+      mainField = pkg.browser || pkg.main
+      moduleType = 'commonjs'
+    }
+    if (!extname(mainField)) mainField += '.js'
+    return join('/node_modules', moduleName, mainField) + '?type=thirdModule&moduleType=' + moduleType + '&moduleName=' + moduleName
   } else {
     if (!extname(value)) value += '.js'
-    return '/node_modules/' + value + '?type=thirdModule'
+    return '/node_modules/' + value + '?type=thirdModule&moduleType=spec'
   }
 }
 
 function resolveImportModule(path) {
-  const moduleName = path.node.value
-  if (isNodeModuleStyle(moduleName)) {
+  let moduleName = path.node.value
+  if (isThirdModule(moduleName)) {
     if (moduleName in config.resolve.import) {
       let resPath = config.resolve.import[moduleName].path
       if (!/^\/node_modules\//.test(resPath)) {
         resPath = join('/node_modules', moduleName, resPath)
       }
-      path.node.value = resPath + '?type=thirdModule&import=' + moduleName
+      // request with import query word means it has been resolve by config
+      path.node.value = resPath + '?type=thirdModule&moduleType=resolvedUmd&moduleName=' + moduleName
     } else {
+      if (!warningModule[moduleName]) {
+        warningModule[moduleName] = moduleName
+        console.warn(chalk.redBright(`Warning: there is no resolve config for "${moduleName}"`))
+      }
       path.node.value = nodeModulesPath(moduleName)
     }
   } else {
     if (!extname(moduleName)) {
-      path.node.value = moduleName + '.js?type=module&_t=' + Date.now()
-    } else {
-      path.node.value = moduleName + '?type=module&_t=' + Date.now()
+      moduleName += '.js'
     }
+    path.node.value = moduleName + '?type=module'
     // path.node.value += ('?_t=' + Date.now())
   }
 }
@@ -67,7 +77,8 @@ function resolveImportModule(path) {
 function resolveImport(code) {
   const ast = babylon.parse(code, {
     sourceType: 'module',
-    allowImportExportEverywhere: false
+    allowImportExportEverywhere: false,
+    plugins: ["jsx"]
   })
   traverse(ast, {
     enter(path) {
@@ -93,7 +104,7 @@ const css = req => {
   return new Promise((resolve, reject) => {
     if (ext === 'scss' || ext === 'sass') {
       sass(req.locals.filePath, ({ status, text }) => {
-        if (status) reject(new Error('sass compile error: ' + req.path))
+        if (status) reject(new Error(`sass compile error: ${req.path} with status: ${status}`))
         else resolve(resolveCss(text))
       });
     } else if (ext === 'less') {
@@ -128,7 +139,7 @@ const umdToModule = (code, importName) => {
 
 const script = req => {
   return new Promise((resolve, reject) => {
-    const ext = req.locals.ext
+    const { ext } = req.locals
     if (ext === 'jsx') {
       resolve(jsx(req).then(code => resolveImport(code)))
     } else {
@@ -137,11 +148,23 @@ const script = req => {
       if (type === 'module') {
         resolve(resolveImport(fileContent))
       } else if (type === 'thirdModule') {
-        const importName = req.query.import
-        if (!importName) { // has no resolve config
+        const moduleType = req.query.moduleType
+        if (moduleType === 'es6') {
           resolve(resolveImport(fileContent))
+        } else if (moduleType === 'umd') {
+          resolve(`(function(){${fileContent}}).call(window);`)
+        } else if (moduleType === 'resolvedUmd') {
+          const moduleName = req.query.moduleName
+          resolve(umdToModule(fileContent, moduleName))
+        } else if (moduleType === 'commonjs') {
+          resolve(`
+            const module = {}, exports = {};
+            module.exports = exports;
+            ${fileContent};
+            export default module.exports;
+          `)
         } else {
-          resolve(resolveImport(umdToModule(fileContent, importName)))
+          resolve(resolveImport(fileContent))
         }
       } else {
         resolve(resolveImport(fileContent))

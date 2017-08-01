@@ -39,10 +39,9 @@ function page() {
 
 module.exports = function() {
   let pageStr = page.toString()
-  pageStr = pageStr.substring(pageStr.indexOf("{") + 1, pageStr.lastIndexOf("}"));
   return `
     ;(function(win, doc) { 
-      ${pageStr} 
+      ${pageStr.substring(pageStr.indexOf('{') + 1, pageStr.lastIndexOf('}'))} 
     })(window, document);
   `
 }

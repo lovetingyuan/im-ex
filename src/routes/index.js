@@ -11,7 +11,7 @@ router.get('/*', function (req, res, next) {
   req.locals = req.locals || {}
   req.locals.filePath = path.resolve(config.root, reqPath)
   req.locals.ext = path.extname(reqPath).substr(1).toLowerCase()
-  req.locals.isNodeModule = /node_modules/.test(reqPath)
+  req.locals.isThirdModule = /node_modules\//.test(reqPath)
   next()
 });
 

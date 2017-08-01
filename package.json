@@ -45,6 +45,7 @@
     "express-sse": "^0.4.1",
     "helmet": "^3.8.0",
     "less": "^2.7.2",
+    "madge": "^2.0.0",
     "morgan": "^1.8.2",
     "node-notifier": "^5.1.2",
     "sass.js": "^0.10.5",
