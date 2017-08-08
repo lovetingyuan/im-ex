@@ -6,7 +6,7 @@ const { relative } = require('path').posix
 const express = require('express');
 const router = express.Router();
 const watch = require('../services/watch')
-let watchList = config.server.watch.concat(config.server.index)
+let watchList = ['./'].concat(config.server.index)
 watch(watchList, changeList => {
   console.log('changelist', changeList)
   madge(config.entry).then((res) => {
@@ -20,7 +20,7 @@ watch(watchList, changeList => {
     console.log(44, Object.keys(result))
   });
   sse.send({
-    type: 'reload:script',
+    type: 'hotreload',
     list: changeList
   })
 })

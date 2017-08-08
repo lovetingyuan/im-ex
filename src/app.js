@@ -10,6 +10,9 @@ const notifier = require('node-notifier');
 const helmet = require('helmet')
 const timeout = require('connect-timeout')
 
+const indexContent = require('./services/getIndex')
+const addExt = require('./services/addExt')
+
 const app = express();
 
 // view engine setup
@@ -20,7 +23,7 @@ const app = express();
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(helmet())
 app.use(timeout('5s'))
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   if (!req.timedout) next()
 });
 // app.use(logger('dev'));
@@ -28,10 +31,28 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+config.server.setup(app)
+
+app.use(function(req, res, next) {
+  res.set(config.server.headers);
+  next()
+})
+
 const applyRoutes = require('./routes/routes')
 applyRoutes(app)
+// after routers
+app.get('*', function(req, res, next) {
+  console.log('./', req.url)
+  const reqPath = req.path[0] === '/' ? req.path.substr(1) : req.path
+  req.locals = req.locals || {}
+  const ext = path.extname(reqPath).substr(1).toLowerCase()
+  req.locals.ext = ext
+  req.locals.filePath = path.resolve(config._root, reqPath)
+  req.locals.isThirdModule = /node_modules\//.test(reqPath)
+  next()
+});
 
-const applyMiddlewares = require('./middlewares/middlewares')
+const applyMiddlewares = require('./middlewares')
 applyMiddlewares(app)
 // const madge = require('madge')
 
@@ -39,18 +60,25 @@ applyMiddlewares(app)
 //   console.log(res.obj());
 // });
 
-app.use(express.static(config.root));
+
+app.use(express.static(config._root));
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+  if (config.server.historyFallback) {
+    res.status(200)
+      .type('html')
+      .send(indexContent())
+  } else {
+    const err = new Error('Not Found: ' + req.path);
+    err.status = 404;
+    next(err);
+  }
 });
 
 // error handler
 app.use(function (err, req, res, next) {
   // set locals, only providing error in development
-  console.log('final error', err)
+  console.log('server error', err)
   // String
   notifier.notify({
     'title': 'Error in Backend',

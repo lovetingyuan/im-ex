@@ -1,11 +1,11 @@
 /**
  * Module dependencies.
  */
-require('./config') // have to export config at first
+require('./resolveConfig') // have to export config at first!!!
 
 var app = require('./app');
 var debug = require('debug')('server:server');
-var http = require('http');
+var http = config.server.https ? require('https') : require('http');
 
 /**
  * Get port from environment and store in Express.
@@ -14,6 +14,7 @@ var http = require('http');
 module.exports = function () {
   var port = normalizePort(config.server.port);
   var host = config.server.host
+  var proc = config.server.https ? 'https' : 'http'
   app.set('port', port);
 
   /**
@@ -88,6 +89,9 @@ module.exports = function () {
       ? 'pipe ' + addr
       : 'port ' + addr.port;
     debug('Listening on ' + bind);
+    if (config.server.open) {
+      require('opn')(`${proc}://localhost:${port}`)
+    }
   }
 
 }

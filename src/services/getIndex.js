@@ -1,21 +1,16 @@
 const cheerio = require('cheerio')
 const path = require('path')
 const readFile = require('../services/readFile')
-
-const indexHtmlContent = readFile(path.join(config.root, config.server.index))
+const indexHtmlContent = readFile(path.join(config._root, config.server.index))
 
 const $ = cheerio.load(indexHtmlContent)
 // set html title
 $('title').html(config.head.title)
 const scripts = scripts => {
-  return scripts.map(script => {
-    return `<script src="${script.url}"></script>`
-  }).join('\n')
+  return scripts.map(script => `<script src="${script.url}"></script>`).join('\n')
 }
 const styles = styles => {
-  return styles.map(style => {
-    return `<link rel="stylesheet" href="${style.url}">`
-  }).join('\n')
+  return styles.map(style => `<link rel="stylesheet" href="${style.url}">`).join('\n')
 }
 // add global variables
 $('head').append(`<script>${Object.keys(config.global).map(varName => {
@@ -35,16 +30,12 @@ $('head')
 
 // add application entry script
 $('head').append(`<script type="module" data-type="entry" src="${config.entry}?type=entry"></script>`)
+let indexContent = ''
 
-const indexHtmlContentParsed = $.html()
-module.exports = function () {
-  return function (req, res, next) {
-    if (req.path === '/' || req.path === '/' + config.server.index) {
-      res.status(200)
-        .type('html')
-        .send(indexHtmlContentParsed)
-    } else {
-      next()
-    }
+module.exports = function() {
+  if (!indexContent) {
+    indexContent = $.html()
   }
+  return indexContent
 }
+

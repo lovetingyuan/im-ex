@@ -3,15 +3,15 @@ function page() {
   if (typeof global !== 'object') {
     win.global = win
   }
-  win.__TY__ = {
-    setStyle(content) {
+  win.__NAMESPACE__ = {
+    setStyle(content, filePath) {
       let style = document.createElement('style')
       style.appendChild(document.createTextNode(content))
       document.head.appendChild(style)
       style = null
     }
   }
-  const es = new EventSource('/sse')
+  const es = new EventSource('__SSE__')
   function reload() {
     const entryScript = document.querySelectorAll('script[data-type=entry]')
     entryScript.forEach(dom => {
@@ -28,7 +28,7 @@ function page() {
   }
   es.onmessage = function (e) {
     const data = JSON.parse(e.data)
-    if (data.type === 'reload:script') {
+    if (data.type === 'hotreload') {
       reload()
     } else if (data.type === 'reload') {
       location.reload()
@@ -39,6 +39,8 @@ function page() {
 
 module.exports = function() {
   let pageStr = page.toString()
+    .replace(/__NAMESPACE__/g, config._browserNameSpace)
+    .replace(/__SSE__/g, config._sse)
   return `
     ;(function(win, doc) { 
       ${pageStr.substring(pageStr.indexOf('{') + 1, pageStr.lastIndexOf('}'))} 

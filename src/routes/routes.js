@@ -6,8 +6,10 @@ const routes = fs.readdirSync(__dirname)
 
 module.exports = function applyRoutes(app) {
   routes.forEach(route => {
-    if (route === 'index.js') route = ''
-    else route = route.split('.')[0]
-    app.use('/' + route, require('./' + route))
+    if (route === 'index.js') {
+      app.use(['/', '/index.html'], require('./index'))
+    } else {
+      app.use('/' + route.split('.')[0], require('./' + route))
+    }
   })
 }
