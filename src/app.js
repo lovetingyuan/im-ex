@@ -12,6 +12,7 @@ const timeout = require('connect-timeout')
 
 const indexContent = require('./services/getIndex')
 const addExt = require('./services/addExt')
+const readFile = require('./services/readFile')
 
 const app = express();
 
@@ -33,7 +34,7 @@ app.use(cookieParser());
 
 config.server.setup(app)
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.set(config.server.headers);
   next()
 })
@@ -41,7 +42,8 @@ app.use(function(req, res, next) {
 const applyRoutes = require('./routes/routes')
 applyRoutes(app)
 // after routers
-app.get('*', function(req, res, next) {
+
+app.get('*', function (req, res, next) {
   const reqPath = req.path[0] === '/' ? req.path.substr(1) : req.path
   req.locals = req.locals || {}
   const ext = path.extname(reqPath).substr(1).toLowerCase()
@@ -51,8 +53,44 @@ app.get('*', function(req, res, next) {
   next()
 });
 
-const applyMiddlewares = require('./middlewares')
-applyMiddlewares(app)
+const getReg = fileTypes => {
+  return new RegExp('\\/.+?\\.(' + fileTypes.join('|') +')$')
+}
+
+app.use(getReg([
+  'js', 'jsx', 'coffee'
+]), [
+  require('./middlewares/script'),
+  require('./middlewares/resolve')
+])
+
+app.use(getReg([
+  'css', 'scss', 'sass', 'less', 'styl'
+]), [
+  require('./middlewares/css')
+])
+
+app.use(getReg([
+  'json', 'json5'
+]), [
+  require('./middlewares/json')
+])
+
+app.use(getReg([
+  'txt'
+]), [
+  require('./middlewares/raw')
+])
+
+app.use(getReg([
+  'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'mp3', 'mp4'
+]), [
+  require('./middlewares/file')
+])
+
+
+// const applyMiddlewares = require('./middlewares')
+// applyMiddlewares(app)
 // const madge = require('madge')
 
 // madge('./src/app.js').then((res) => {
