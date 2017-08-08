@@ -14,10 +14,8 @@ watch(watchList, changeList => {
     const result = {}
     changeList.forEach(change => {
       const changedFilePath = relative(path.posix.dirname(config.entry), change)
-      console.log(22, changedFilePath)
       foo(depMap, Object.keys(depMap), change, result)
     })
-    console.log(44, Object.keys(result))
   });
   sse.send({
     type: 'hotreload',

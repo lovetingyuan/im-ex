@@ -42,7 +42,6 @@ const applyRoutes = require('./routes/routes')
 applyRoutes(app)
 // after routers
 app.get('*', function(req, res, next) {
-  console.log('./', req.url)
   const reqPath = req.path[0] === '/' ? req.path.substr(1) : req.path
   req.locals = req.locals || {}
   const ext = path.extname(reqPath).substr(1).toLowerCase()

@@ -4,7 +4,6 @@ const fs = require('fs')
 const slash = require('slash')
 const { join, resolve, extname, relative } = require('path').posix
 
-const response = require('../services/sendRes')
 const readFile = require('../services/readFile')
 const css = require('../services/css')
 const json = require('../services/json')
