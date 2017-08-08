@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const path = require('path')
 
-const response = require('../services/sendRes')
-const readFile = require('../services/readFile')
 const indexContent = require('../services/getIndex')
 
 /* GET home page. */
