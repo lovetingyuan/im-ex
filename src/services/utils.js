@@ -13,16 +13,22 @@ exports.sendScript = function (res, body) {
     .send(body)
 }
 
-exports.handleError = function (err, exit = true) {
+function handleError(err, exit = true) {
   console.error(chalk.bold.red(err))
   if (exit) {
     process.exit(1)
   }
 }
+exports.handleError = handleError
 
-exports.toAbsolutePath = function(pathStr) {
-  for(var i = 0; i < pathStr.length; i++) {
-    if (pathStr[i] !== '.' && pathStr[i] !== '/') break;
+exports.toAbsolutePath = function (pathStr) {
+  if (pathStr[0] === '/' && pathStr[1] !== '.' && pathStr[1] !== '/') return pathStr
+  if (pathStr.substr(0, 2) === './' && pathStr[2] !== '.' && pathStr[2] !== '/') {
+    return pathStr.substr(1)
   }
-  return slash('/' + pathStr.substr(i))
+  if (pathStr[0] !== '.' && pathStr !== '/') return '/' + pathStr
+  handleError(`
+    Invalid path value: ${pathStr},
+    which must be under your server root path
+  `)
 }

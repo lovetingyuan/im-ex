@@ -19,6 +19,7 @@ module.exports = {
     import: {
       react: {
         // if you omit export, then you can only use: import 'moduleName';
+        // path must relative server.root and under it, or throw an error
         path: './node_modules/react/dist/react.js',
         export: 'React' // global namespace
       },

@@ -11,9 +11,6 @@ function applyDefaultOptions(userConfig) {
   return Object.assign({}, userConfig)
 }
 
-function getAbp () {
-
-}
 function getFinalConfig(cp) {
   // config中的所有路径配置都必须对于server.root的相对路径
   // server.root则需要配置相对于config文件的路径
@@ -44,3 +41,4 @@ function getFinalConfig(cp) {
 }
 
 config = getFinalConfig('./config.js') // export config to global scope
+console.log('343')
