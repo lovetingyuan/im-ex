@@ -1,8 +1,7 @@
 // TODO check config format, provide a default config
 const path = require('path')
 const fs = require('fs')
-const errorHandler = require('./services/errorHandler')
-
+const handleError = require('./utils').handleError
 
 function checkConfig(userConfig) {
   return true // TODO
@@ -22,17 +21,17 @@ function getFinalConfig(cp) {
   try {
     var _config = require(configPath)
   } catch(e) {
-    errorHandler('the config does not exist' + e)
+    handleError('the config does not exist' + e)
   }
   if (typeof _config === 'function') {
     _config = config()
   }
-  if (!checkConfig(_config)) errorHandler('the config is not valid')
+  if (!checkConfig(_config)) handleError('the config is not valid')
 
   const userConfig = applyDefaultOptions(_config)
 
   userConfig._browserNameSpace = '__IMEX__'
-  userConfig._sse = '/sse'
+  userConfig._sse = '__sse__'
 
   userConfig._root = path.resolve(path.dirname(configPath), userConfig.server.root)
 

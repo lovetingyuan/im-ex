@@ -1,5 +1,5 @@
 const babel = require('babel-core')
-const readFile = require('../services/readFile')
+const readFile = require('../services/utils').readFile
 const coffee = require('coffeescript')
 
 module.exports = function script(req, res, next) {

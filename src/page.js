@@ -1,4 +1,5 @@
-function page() {
+function page() { // script injected to page
+  /* injected by im-ex, using global namespace: __NAMESPACE__ */
   'use strict';
   if (typeof global !== 'object') {
     win.global = win

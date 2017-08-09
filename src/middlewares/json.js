@@ -1,5 +1,5 @@
 const json5 = require('json5')
-const readFile = require('../services/readFile')
+const { readFile, sendScript} = require('../services/utils')
 
 module.exports = function json(req, res, next) {
   const ext = req.locals.ext
@@ -10,9 +10,7 @@ module.exports = function json(req, res, next) {
     } else if (ext === 'json5') {
       ret = json5.parse(readFile(req.locals.filePath))
     }
-    res.status(200)
-        .type('application/javascript')
-        .send(`export default ${JSON.stringify(ret)};`)
+    sendScript(res, `export default ${JSON.stringify(ret)};`)
   } catch (e) {
     next(e)
   }

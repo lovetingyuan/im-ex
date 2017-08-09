@@ -1,7 +1,7 @@
 /**
  * Module dependencies.
  */
-require('./resolveConfig') // have to export config at first!!!
+require('./services/resolveConfig') // have to export config at first!!!
 
 var app = require('./app');
 var debug = require('debug')('server:server');

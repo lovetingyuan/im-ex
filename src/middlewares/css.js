@@ -1,12 +1,10 @@
 const sass = require('sass.js/dist/sass.node')
 const less = require('less')
 const stylus = require('stylus');
-const readFile = require('../services/readFile')
+const { readFile, sendScript: send } = require('../services/utils')
 
 const sendScript = (res, css) => {
-  res.status(200)
-    .type('application/javascript')
-    .send(`${config._browserNameSpace}.setStyle(\`${css}\`);`)
+  send(res, `${config._browserNameSpace}.setStyle(\`${css}\`);`)
 }
 module.exports = function css(req, res, next) {
   const ext = req.locals.ext

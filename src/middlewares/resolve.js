@@ -5,7 +5,7 @@ const traverse = require('babel-traverse').default;
 const generate = require('babel-generator').default
 const t = require('babel-types')
 const querystring = require('querystring')
-const readFile = require('../services/readFile')
+const {readFile, sendScript} = require('../services/utils')
 const addExt = require('../services/addExt')
 const path = require('path')
 
@@ -136,7 +136,5 @@ module.exports = function resolve(req, res) {
   } else {
     ret = resolveImport(fileContent, filePath)
   }
-  res.status(200)
-    .type('application/javascript')
-    .send(ret)
+  sendScript(res, ret)
 }

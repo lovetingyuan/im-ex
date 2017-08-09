@@ -10,9 +10,9 @@ const notifier = require('node-notifier');
 const helmet = require('helmet')
 const timeout = require('connect-timeout')
 
-const indexContent = require('./services/getIndex')
+const getIndex = require('./routes/index').getIndex
 const addExt = require('./services/addExt')
-const readFile = require('./services/readFile')
+const readFile = require('./services/utils').readFile
 
 const app = express();
 
@@ -39,8 +39,8 @@ app.use(function (req, res, next) {
   next()
 })
 
-const applyRoutes = require('./routes/routes')
-applyRoutes(app)
+app.use(['/', '/index.html'], require('./routes/index').default)
+app.use('/' + config._sse, require('./routes/sse'))
 // after routers
 
 app.get('*', function (req, res, next) {
@@ -53,50 +53,34 @@ app.get('*', function (req, res, next) {
   next()
 });
 
-const getReg = fileTypes => {
-  return new RegExp('\\/.+?\\.(' + fileTypes.join('|') +')$')
+const applyMiddlewares = config => {
+  const getReg = fileTypes => {
+    if (!Array.isArray(fileTypes)) fileTypes = [fileTypes]
+    return new RegExp('^\\/.+?\\.(' + fileTypes.join('|') + ')$')
+  }
+  config.forEach(({ exts, names }) => {
+    app.use(
+      getReg(exts),
+      names.map(name => require('./middlewares/' + name))
+    )
+  })
 }
-
-app.use(getReg([
-  'js', 'jsx', 'coffee'
-]), [
-  require('./middlewares/script'),
-  require('./middlewares/resolve')
-])
-
-app.use(getReg([
-  'css', 'scss', 'sass', 'less', 'styl'
-]), [
-  require('./middlewares/css')
-])
-
-app.use(getReg([
-  'json', 'json5'
-]), [
-  require('./middlewares/json')
-])
-
-app.use(getReg([
-  'txt'
-]), [
-  require('./middlewares/raw')
-])
-
-app.use(getReg([
-  'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'mp3', 'mp4'
-]), [
-  require('./middlewares/file')
-])
-
-
-// const applyMiddlewares = require('./middlewares')
-// applyMiddlewares(app)
-// const madge = require('madge')
-
-// madge('./src/app.js').then((res) => {
-//   console.log(res.obj());
-// });
-
+applyMiddlewares([{
+  exts: ['js', 'jsx', 'coffee'],
+  names: ['script', 'resolve']
+}, {
+  exts: ['css', 'scss', 'sass', 'less', 'styl'],
+  names: ['css']
+}, {
+  exts: ['json', 'json5'],
+  names: ['json']
+}, {
+  exts: ['txt'],
+  names: ['raw']
+}, {
+  exts: ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'mp3', 'mp4'],
+  names: ['file']
+}])
 
 app.use(express.static(config._root));
 // catch 404 and forward to error handler
@@ -104,7 +88,7 @@ app.use(function (req, res, next) {
   if (config.server.historyFallback) {
     res.status(200)
       .type('html')
-      .send(indexContent())
+      .send(getIndex())
   } else {
     const err = new Error('Not Found: ' + req.path);
     err.status = 404;
