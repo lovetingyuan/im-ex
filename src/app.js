@@ -48,7 +48,7 @@ app.get('*', function (req, res, next) {
   req.locals = req.locals || {}
   const ext = path.extname(reqPath).substr(1).toLowerCase()
   req.locals.ext = ext
-  req.locals.filePath = path.resolve(config._root, reqPath)
+  req.locals.filePath = path.resolve(config._server.root, reqPath)
   req.locals.isThirdModule = /node_modules\//.test(reqPath)
   next()
 });
@@ -78,11 +78,11 @@ applyMiddlewares([{
   exts: ['txt'],
   names: ['raw']
 }, {
-  exts: ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'mp3', 'mp4'],
+  exts: ['jpg', 'jpeg', 'ico', 'png', 'gif', 'svg', 'webp', 'mp3', 'mp4'],
   names: ['file']
 }])
 
-app.use(express.static(config._root));
+app.use(express.static(config._server.root));
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   if (config.server.historyFallback) {

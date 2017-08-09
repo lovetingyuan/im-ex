@@ -1,7 +1,7 @@
 // TODO check config format, provide a default config
 const path = require('path')
 const fs = require('fs')
-const handleError = require('./utils').handleError
+const { handleError, toAbsolutePath } = require('./utils')
 
 function checkConfig(userConfig) {
   return true // TODO
@@ -32,8 +32,13 @@ function getFinalConfig(cp) {
 
   userConfig._browserNameSpace = '__IMEX__'
   userConfig._sse = '__sse__'
-
-  userConfig._root = path.resolve(path.dirname(configPath), userConfig.server.root)
+  userConfig._server = {
+    root: path.resolve(path.dirname(configPath), userConfig.server.root)
+  }
+  userConfig._entry = toAbsolutePath(userConfig.entry)
+  userConfig._head = {
+    favicon: toAbsolutePath(userConfig.head.favicon)
+  }
 
   return userConfig
 }

@@ -4,7 +4,7 @@ const path = require('path')
 
 const cheerio = require('cheerio')
 const readFile = require('../services/utils').readFile
-const indexHtmlContent = readFile(path.join(config._root, config.server.index))
+const indexHtmlContent = readFile(path.join(config._server.root, config.server.index))
 
 const $ = cheerio.load(indexHtmlContent)
 // set html title
@@ -21,7 +21,7 @@ $('head').append(`<script>${Object.keys(config.global).map(varName => {
   return `var ${varName} = ${JSON.stringify(value)};`
 }).join('\n')}</script>`)
 // add favicon
-$('head').append(`<link rel="shortcut icon" type="image/ico" href="${config.head.favicon}"/>`)
+$('head').append(`<link rel="shortcut icon" type="image/ico" href="${config._head.favicon}"/>`)
 // add some util script
 const prependScriptContent = require('../page')()
 $('head').prepend(`<script>${prependScriptContent}</script>`)
@@ -32,7 +32,7 @@ $('head')
   .append(scripts(config.head.scripts))
 
 // add application entry script
-$('head').append(`<script type="module" data-type="entry" src="${config.entry}?type=entry"></script>`)
+$('head').append(`<script type="module" data-type="entry" src="${config._entry}?type=entry"></script>`)
 let indexContent = ''
 
 function getIndex() {

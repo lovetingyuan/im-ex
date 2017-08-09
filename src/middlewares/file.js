@@ -6,7 +6,7 @@ module.exports = function file (req, res, next) {
   if (req.query.type === 'file') {
     next()
   } else {
-    const relativePath = slash(path.relative(config._root, req.locals.filePath))
+    const relativePath = slash('/' + path.relative(config._server.root, req.locals.filePath))
     sendScript(res, `export default "${relativePath}?type=file";`)
   }
 }

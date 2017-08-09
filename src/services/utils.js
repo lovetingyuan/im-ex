@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
+const slash = require('slash')
 
 exports.readFile = function (filePath) {
   return fs.readFileSync(filePath, { encoding: 'utf8' })
@@ -17,4 +18,11 @@ exports.handleError = function (err, exit = true) {
   if (exit) {
     process.exit(1)
   }
+}
+
+exports.toAbsolutePath = function(pathStr) {
+  for(var i = 0; i < pathStr.length; i++) {
+    if (pathStr[i] !== '.' && pathStr[i] !== '/') break;
+  }
+  return slash('/' + pathStr.substr(i))
 }
