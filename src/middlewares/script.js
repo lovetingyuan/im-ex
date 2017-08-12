@@ -3,6 +3,7 @@ const readFile = require('../services/utils').readFile
 const coffee = require('coffeescript')
 
 module.exports = function script(req, res, next) {
+  if (!req.query.__imex__) return next()
   const ext = req.locals.ext
   if (ext === 'jsx') {
     babel.transformFile(req.locals.filePath, {
@@ -17,7 +18,7 @@ module.exports = function script(req, res, next) {
     })
   } else if (ext === 'coffee') {
     res.body = coffee.compile(readFile(req.locals.filePath), {
-      inlineMap: true, bare: true
+      inlineMap: true, bare: true, filename: req.locals.reqPath
     })
     next()
   } else {

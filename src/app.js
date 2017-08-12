@@ -1,18 +1,16 @@
-var express = require('express');
-var path = require('path');
+const express = require('express');
+const path = require('path');
 const fs = require('fs')
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 
 const notifier = require('node-notifier');
 const helmet = require('helmet')
 const timeout = require('connect-timeout')
 
 const getIndex = require('./routes/index').getIndex
-const addExt = require('./services/addExt')
-const readFile = require('./services/utils').readFile
 
 const app = express();
 
@@ -46,10 +44,10 @@ app.use('/' + config._sse, require('./routes/sse'))
 app.get('*', function (req, res, next) {
   const reqPath = req.path[0] === '/' ? req.path.substr(1) : req.path
   req.locals = req.locals || {}
-  const ext = path.extname(reqPath).substr(1).toLowerCase()
-  req.locals.ext = ext
+  req.query = req.query || {}
+  req.locals.reqPath = reqPath
   req.locals.filePath = path.resolve(config._server.root, reqPath)
-  req.locals.isThirdModule = /node_modules\//.test(reqPath)
+  req.locals.ext = path.extname(reqPath).substr(1).toLowerCase()
   next()
 });
 

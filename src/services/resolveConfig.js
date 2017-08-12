@@ -41,4 +41,3 @@ function getFinalConfig(cp) {
 }
 
 config = getFinalConfig('./config.js') // export config to global scope
-console.log('343')

@@ -5,10 +5,23 @@ function page() {
   }
   win.__NAMESPACE__ = {
     setStyle(content, filePath) {
-      let style = doc.createElement('style')
-      style.appendChild(doc.createTextNode(content))
-      doc.head.appendChild(style)
-      style = null
+      const bb = new Blob([content], {type: 'text/css'})
+      const bbUrl = URL.createObjectURL(bb)
+      // let dom = doc.createElement('link')
+      // dom.setAttribute('rel', 'stylesheet')
+      // dom.setAttribute('href', bbUrl)
+      // doc.head.appendChild(dom)
+      // dom = null
+      let dom = doc.querySelector(`style[data-path="${filePath}"]`)
+      if (dom) {
+        dom.innerHTML = content
+      } else {
+        dom = doc.createElement('style')
+        dom.innerHTML = content;
+        dom.dataset.path = filePath;
+        document.head.appendChild(dom)
+      }
+      dom = null
     }
   }
   const es = new EventSource('/__SSE__')

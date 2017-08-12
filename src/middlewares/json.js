@@ -2,6 +2,7 @@ const json5 = require('json5')
 const { readFile, sendScript} = require('../services/utils')
 
 module.exports = function json(req, res, next) {
+  if (!req.query.__imex__) return next()
   const ext = req.locals.ext
   try {
     let ret 

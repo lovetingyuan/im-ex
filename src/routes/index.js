@@ -32,7 +32,7 @@ $('head')
   .append(scripts(config.head.scripts))
 
 // add application entry script
-$('head').append(`<script type="module" data-type="entry" src="${config._entry}?type=entry"></script>`)
+$('head').append(`<script type="module" data-type="entry" src="${config._entry}?__imex__=__imex__&moduleType=entryModule"></script>`)
 let indexContent = ''
 
 function getIndex() {

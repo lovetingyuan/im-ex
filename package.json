@@ -50,6 +50,7 @@
     "madge": "^2.0.0",
     "morgan": "^1.8.2",
     "node-notifier": "^5.1.2",
+    "node-sass": "^4.5.3",
     "opn": "^5.1.0",
     "sass.js": "^0.10.5",
     "serve-favicon": "^2.4.3",
