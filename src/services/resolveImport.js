@@ -44,13 +44,53 @@ function findFile(importer, dirname) {
       }
     }
   }
+
   if (fs.existsSync(filePath)) {
-    return {
-      importer,
-      filePath
+    const stat = fs.statSync(filePath)
+    if (stat.isFile()) {
+      return {
+        importer,
+        filePath
+      }
+    } else if (stat.isDirectory) {
+      return findFile(importer, filePath)
+    } else {
+      handleError(`file: ${filePath} is invalid`)
     }
   }
   handleError(`file: ${filePath} does not exist`)
+}
+
+function resolveFile(pathStr, dir = config._server.root) {
+  pathStr = path.resolve(dir, pathStr)
+  if (fs.existsSync(pathStr)) {
+    let stat = fs.statSync(pathStr)
+    if (stat.isFile()) 
+      return slash('/' + path.relative(config._server.root, pathStr))
+  }
+  const resolve = index => {
+    for (let i = 0; i < config.resolve.exts.length; i++) {
+      let ext = '.' + config.resolve.exts[i]
+      if (index) {
+        let _pathStr = path.posix.join(pathStr, 'index' + ext)
+        if (fs.existsSync(_pathStr)) {
+          let stat = fs.statSync(_pathStr)
+          if (stat.isFile()) return _pathStr
+        }
+      } else {
+        let _pathStr = pathStr + ext
+        if (fs.existsSync(_pathStr)) {
+          let stat = fs.statSync(_pathStr)
+          if (stat.isFile()) return _pathStr
+        }
+      }
+    }
+  }
+  const ret = resolve(false) || resolve(true)
+  if (!ret) {
+    handleError(`${pathStr} not found`)
+  }
+  return '/' + slash(path.relative(config._server.root, ret))
 }
 
 /**
@@ -74,7 +114,7 @@ function findFile(importer, dirname) {
  * }
  */
 function resolveImporter(importer, currentPath) {
-  if (importer.indexOf('!') > 0) { // webpack inline loader, we ignore
+  if (importer.indexOf('!') >= 0) { // webpack inline loader, we ignore
     importer = importer.split('!').pop()
   }
   let query = {}, importPath = importer
@@ -89,41 +129,58 @@ function resolveImporter(importer, currentPath) {
     importStr: importPath,
     // currentPath,
   }
+  let error = (importPath) => {
+    handleError(`module: ${importPath} has not been resolved at ${currentPath},
+    you can config the module file path in "config.resolve.import"`
+    )
+  }
 
   if (importPath[0] === '.' || importPath[0] === '/') {
     let contextDir = importPath[0] === '.' ? path.dirname(currentPath) : config._server.root
-    let { importer, filePath } = findFile(importPath, contextDir)
     // meta.filePath = filePath
-    meta.importer = importer
+    meta.importer = resolveFile(importPath, contextDir)
     meta.moduleType = 'module'
   } else { // third module
-    const reolvedImport = config.resolve.import
-    if (typeof reolvedImport[importPath] === 'object') {
-      meta.moduleType = 'thirdModule'
-      meta.importer = reolvedImport[importPath].path
-      // meta.filePath = join(config._server.root, path.substr(1)) // remove '/'
-    } else { // user alias, 'comp': '/src/components/', import from 'comp/Header'
-      for (let alias in reolvedImport) {
-        if (importPath === alias || importPath.indexOf(alias + '/') === 0) {
-          let aliasVal = reolvedImport[alias].substr(1)
-          if (aliasVal.substr(-1) === '/') {
-            aliasVal = aliasVal.substr(0, -1)
-          }
+    /**
+     *'react-intl': { // react-intl, react-intl/locals/en
+        path: 'node_modules/react-intl/dist/react-intl.js',
+        export: 'ReactIntl'
+      },
+      'react-intl': /node_modules/react-intl/
+      'sanitize.css': './node_modules/sanitize.css',  sanitize.css/sanitize.css
 
-          let { importer, filePath } = findFile(aliasVal + importPath.substr(alias.length), config._server.root)
-          // meta.filePath = filePath
-          meta.importer = '/' + importer
-          if (/node_modules\/.+/.test(slash(filePath))) {
-            meta.moduleType = 'aliasThirdModule'
-          } else {
-            meta.moduleType = 'aliasModule'
-          }
-          return meta
+      components: './app/components',   components/App
+     */
+    const resolveImport = config.resolve.import
+    let moduleName = importPath
+
+    if (importPath.indexOf('/') > 0) {
+      moduleName = importPath.split('/')[0]
+      if (!(moduleName in resolveImport)) {
+        error(importPath)
+      }
+      if (typeof resolveImport[moduleName] === 'object') {
+        let _path = resolveImport[moduleName].path.substr(1)
+        _path = _path.substr(0, _path.indexOf('node_modules'))
+        _path = path.posix.join(_path, 'node_modules', importPath)
+        meta.importer = resolveFile(_path)
+        meta.moduleType = 'aliasThirdModule'
+      } else {
+        let _path = resolveImport[moduleName]
+        _path = path.posix.join(_path.substr(1), importPath.substr(moduleName.length + 1))
+        meta.importer = resolveFile(_path)
+        if (/node_modules\//.test(_path)) {
+          meta.moduleType = 'aliasThirdModule'
+        } else {
+          meta.moduleType = 'aliasModule'
         }
       }
-      handleError(`module: ${importPath} has not been resolved,
-        you can config the module file path in "config.resolve.import"`
-      )
+    } else {
+      if (!(moduleName in resolveImport)) {
+        error(moduleName)
+      }
+      meta.importer = resolveImport[importPath].path
+      meta.moduleType = 'thirdModule'
     }
   }
   return meta
@@ -132,8 +189,8 @@ function resolveImporter(importer, currentPath) {
 function convertImportByAst(code, filePath, depCollection) {
   const ast = babylon.parse(code, {
     sourceType: 'module',
-    allowImportExportEverywhere: false,
-    plugins: ['jsx', 'objectRestSpread', 'classProperties', 'asyncGenerators']
+    allowImportExportEverywhere: true,
+    plugins: ['jsx', 'objectRestSpread', 'classProperties', 'asyncGenerators', 'dynamicImport']
   })
   traverse(ast, {
     ImportDeclaration(path) {
@@ -163,6 +220,11 @@ function convertImportByAst(code, filePath, depCollection) {
           })
         }
       })
+      if (importStr === 'babel-polyfill') {
+        path.replaceWith(t.stringLiteral('babel-polyfill'));
+        // path.node.source.value += '?__imex__=__imex__&moduleType=ignore'
+        return
+      }
       const importerResolved = resolveImporter(importStr, filePath)
 
       importerResolved.importType = type

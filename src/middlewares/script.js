@@ -13,13 +13,14 @@ module.exports = function script(req, res, next) {
     babel.transformFile(req.locals.filePath, {
       plugins: [
         ['transform-react-jsx', { useBuiltIns: true }],
-        ['transform-class-properties', { spec: true }]
+        ['transform-class-properties', { spec: true }],
       ],
       parserOpts: {
         plugins: [
           'classProperties',
           'asyncGenerators',
           'objectRestSpread',
+          'dynamicImport',
           'jsx'
         ]
       },

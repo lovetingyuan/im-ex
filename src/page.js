@@ -3,8 +3,11 @@ function page() {
   if (typeof global !== 'object') {
     win.global = win
   }
+  win.module = win.module || {}
+  
+
   win.addEventListener('error', function(e) {
-    console.error('page error', e);
+    // console.error('page error', e);
   })
   win.__NAMESPACE__ = {
     setStyle(content, filePath) {

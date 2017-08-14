@@ -54,10 +54,12 @@ const configSchema = {
           }
         }, // √
         historyFallback: {
-          type: 'boolean'
+          type: 'boolean',
+          default: false
         }, // serve index.html to in place of 404
         open: {
-          type: 'boolean'
+          type: 'boolean',
+          default: true
         }, // open browser, default: true   √
         // log: '', // 'page', 'console', where to show server error, default is 'console'
         // setup(app) {
@@ -75,6 +77,7 @@ const configSchema = {
       properties: {
         import: {
           type: 'object',
+          default: {},
           additionalProperties: true,
           propertyNames: {
             format: 'validPackageName',
@@ -90,7 +93,13 @@ const configSchema = {
                 required: ['path', 'export'],
                 properties: {
                   path: { type: 'string', format: 'abPath', },
-                  export: { type: 'string', minLength: 1 },
+                  export: {
+                    oneOf: [{
+                      type: 'string', minLength: 1
+                    },
+                    { type: 'null' }
+                    ]
+                  },
                 }
               }]
             }
@@ -103,12 +112,13 @@ const configSchema = {
         },
         res: {
           type: 'object',
+          default: {},
           propertyNames: { enum: ['script', 'style', 'file', 'raw', 'json'] },
           additionalProperties: false,
           patternProperties: {
             '.+': {
               type: 'array',
-              items: {type: 'string'}
+              items: { type: 'string' }
             }
           }
         }
@@ -116,11 +126,13 @@ const configSchema = {
     },
     global: {
       type: 'object',
-      additionalProperties: true
+      additionalProperties: true,
+      default: {}
     },
     head: {
       type: 'object',
       additionalProperties: false,
+      default: {},
       properties: {
         title: { type: 'string', default: 'imex' },
         meta: {
@@ -138,8 +150,8 @@ const configSchema = {
           }
         },
         favicon: { type: 'string', format: 'abPath' },
-        scripts: { type: 'array', items: { type: 'string' } },
-        styles: { type: 'array', items: { type: 'string' } }
+        scripts: { type: 'array', items: { type: 'string' }, default: [] },
+        styles: { type: 'array', items: { type: 'string' }, default: [] }
       }
     }
   }
@@ -150,7 +162,7 @@ function checkConfig(userConfig) {
     formats: {
       validPackageName(val) {
         if (val[0] === '.' || val[0] === '/') return false
-        return /^[@\-\/\w]+$/.test(val)
+        return /^[@\-\/\.\w]+$/.test(val)
       },
       abPath(val) { // ./sdf, /sdfs, sdfsd
         let noDS = char => char !== '/' && char !== '.'
@@ -184,7 +196,7 @@ function getFinalConfig(cp) {
   if (typeof _config === 'function') {
     _config = config()
   }
-  let noop = function() {}
+  let noop = function () { }
   let setup = noop
   if (_config.server && typeof _config.server === 'object') {
     setup = _config.server.setup || noop
@@ -195,6 +207,7 @@ function getFinalConfig(cp) {
       let resolved = _config.resolve.import[importer]
       if (typeof resolved === 'object' && resolved && typeof resolved.export === 'function') {
         importExportFuncs[importer] = resolved.export
+        resolved.export = null
       }
     })
   }
@@ -218,6 +231,15 @@ function getFinalConfig(cp) {
   userConfig._head = {
     favicon: toAbsolutePath(userConfig.head.favicon)
   }
+
+  Object.keys(userConfig.resolve.import).forEach(moduleName => {
+    const resolve = userConfig.resolve.import[moduleName]
+    if (typeof resolve === 'string') {
+      userConfig.resolve.import[moduleName] = toAbsolutePath(resolve)
+    } else {
+      userConfig.resolve.import[moduleName].path = toAbsolutePath(resolve.path)
+    }
+  })
 
   return userConfig
 }
