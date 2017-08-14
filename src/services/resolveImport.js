@@ -19,48 +19,7 @@ const slash = require('slash')
  * @param {*} dirname 
  * @param {*} importer 
  */
-
-function findFile(importer, dirname) {
-  let ext = path.extname(importer)
-  let filePath = path.resolve(dirname, importer)
-  if (!ext) {
-    const exts = config.resolve.exts
-    for (let i = 0; i < exts.length; i++) {
-      let fp = filePath + '.' + exts[i]
-      if (fs.existsSync(fp)) {
-        return {
-          importer: importer + '.' + exts[i],
-          filePath: fp
-        }
-      }
-    }
-    for (let i = 0; i < exts.length; i++) {
-      let fp = filePath + '/index.' + exts[i]
-      if (fs.existsSync(fp)) {
-        return {
-          importer: importer + '/index.' + exts[i],
-          filePath: fp
-        }
-      }
-    }
-  }
-
-  if (fs.existsSync(filePath)) {
-    const stat = fs.statSync(filePath)
-    if (stat.isFile()) {
-      return {
-        importer,
-        filePath
-      }
-    } else if (stat.isDirectory) {
-      return findFile(importer, filePath)
-    } else {
-      handleError(`file: ${filePath} is invalid`)
-    }
-  }
-  handleError(`file: ${filePath} does not exist`)
-}
-
+ 
 function resolveFile(pathStr, dir = config._server.root) {
   pathStr = path.resolve(dir, pathStr)
   if (fs.existsSync(pathStr)) {
