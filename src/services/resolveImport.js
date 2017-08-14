@@ -133,7 +133,7 @@ function convertImportByAst(code, filePath, depCollection) {
   const ast = babylon.parse(code, {
     sourceType: 'module',
     allowImportExportEverywhere: false,
-    plugins: ["jsx"]
+    plugins: ['jsx', 'objectRestSpread', 'classProperties', 'asyncGenerators']
   })
   traverse(ast, {
     ImportDeclaration(path) {

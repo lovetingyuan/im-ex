@@ -4,7 +4,7 @@ const path = require('path')
 
 const cheerio = require('cheerio')
 const readFile = require('../services/utils').readFile
-const indexHtmlContent = readFile(path.join(config._server.root, config.server.index))
+const indexHtmlContent = readFile(path.resolve(config._server.root, config.server.index))
 
 const $ = cheerio.load(indexHtmlContent)
 // set html title

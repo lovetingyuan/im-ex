@@ -48,6 +48,7 @@ app.get('*', function (req, res, next) {
   req.locals.reqPath = reqPath
   req.locals.filePath = path.resolve(config._server.root, reqPath)
   req.locals.ext = path.extname(reqPath).substr(1).toLowerCase()
+  req.locals.third = /node_modules\//.test(reqPath)
   next()
 });
 

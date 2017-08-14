@@ -3,6 +3,9 @@ function page() {
   if (typeof global !== 'object') {
     win.global = win
   }
+  win.addEventListener('error', function(e) {
+    console.error('page error', e);
+  })
   win.__NAMESPACE__ = {
     setStyle(content, filePath) {
       const bb = new Blob([content], {type: 'text/css'})
