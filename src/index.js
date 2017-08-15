@@ -1,10 +1,11 @@
 /**
  * Module dependencies.
  */
+process.env.DEBUG = true
 require('./services/resolveConfig') // have to export config at first!!!
 
 var app = require('./app');
-var debug = require('debug')('server:server');
+var debug = require('debug')('imex:server');
 var http = config.server.https ? require('https') : require('http');
 
 /**

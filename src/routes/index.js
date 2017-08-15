@@ -30,7 +30,7 @@ $('head').append(`<script>${Object.keys(config.global).map(varName => {
  
 }).join('\n')}</script>`)
 // add favicon
-$('head').append(`<link rel="shortcut icon" type="image/ico" href="${config._head.favicon}"/>`)
+$('head').append(`<link rel="shortcut icon" type="image/ico" href="${config.head.favicon}"/>`)
 // add some util script
 const prependScriptContent = require('../page')()
 $('head').prepend(`<script>${prependScriptContent}</script>`)

@@ -19,12 +19,12 @@ const slash = require('slash')
  * @param {*} dirname 
  * @param {*} importer 
  */
- 
+
 function resolveFile(pathStr, dir = config._server.root) {
   pathStr = path.resolve(dir, pathStr)
   if (fs.existsSync(pathStr)) {
     let stat = fs.statSync(pathStr)
-    if (stat.isFile()) 
+    if (stat.isFile())
       return slash('/' + path.relative(config._server.root, pathStr))
   }
   const resolve = index => {
@@ -138,7 +138,11 @@ function resolveImporter(importer, currentPath) {
       if (!(moduleName in resolveImport)) {
         error(moduleName)
       }
-      meta.importer = resolveImport[importPath].path
+      if (typeof resolveImport[moduleName] === 'string') {
+        meta.importer = resolveImport[moduleName]
+      } else {
+        meta.importer = resolveImport[importPath].path
+      }
       meta.moduleType = 'thirdModule'
     }
   }
@@ -146,18 +150,18 @@ function resolveImporter(importer, currentPath) {
 }
 
 const babylonConf = {
-    sourceType: 'module',
-    allowImportExportEverywhere: false,
-    plugins: [
-      'jsx', 
-      'typescript', 
-      'flow', 
-      'objectRestSpread', 
-      'classProperties', 
-      'asyncGenerators', 
-      'dynamicImport'
-    ]
-  }
+  sourceType: 'module',
+  allowImportExportEverywhere: false,
+  plugins: [
+    'jsx',
+    'typescript',
+    'flow',
+    'objectRestSpread',
+    'classProperties',
+    'asyncGenerators',
+    'dynamicImport'
+  ]
+}
 
 function convertImportByAst(code, filePath, depCollection) {
   const ast = babylon.parse(code, babylonConf)
@@ -170,11 +174,30 @@ function convertImportByAst(code, filePath, depCollection) {
     CallExpression(path) { // dynamic import: import('./components')
       if (path.node.callee.type === 'Import') {
         const { name } = top.scope.generateUidIdentifier()
-        const importer = path.node.arguments[0].value.trim()
+        const importStr = path.node.arguments[0].value.trim()
+        const importerResolved = resolveImporter(importStr, filePath)
+
+        importerResolved.importType = [{
+          type: 'default',
+          value: name
+        }]
+        if (Array.isArray(depCollection)) {
+          depCollection.push(Object.assign({}, importerResolved))
+        }
+        Object.keys(importerResolved).forEach(key => {
+          if (typeof importerResolved[key] === 'object') {
+            importerResolved[key] = JSON.stringify(importerResolved[key])
+          }
+        })
+        const queryStr = '?' + querystring.stringify(importerResolved)
+        let importer = importerResolved.importer + queryStr
+        if (['module', 'aliasModule'].includes(importerResolved.moduleType)) {
+          importer += '&_t=' + Date.now()
+        }
         path.replaceWithSourceString(`Promise.resolve(${name})`)
         top.node.body.unshift(
           t.importDeclaration(
-            [ t.importDefaultSpecifier(t.identifier(name)) ],
+            [t.importDefaultSpecifier(t.identifier(name))],
             t.stringLiteral(importer)
           )
         )
@@ -241,8 +264,10 @@ function umdToModule(code, importName, importType) {
     const modules = importType.map(({ type, value }) => {
       return type === 'module' ? `export const ${value} = ${exportConf}.${value};` : ''
     }).join('\n')
-    newFileContent = `;(function(){${code}}).call(window);
-      ${modules}; export default ${exportConf};`
+    newFileContent = `;(function(){
+      ${code};
+    }).call(window);
+    ${modules}; export default ${exportConf};`
   }
   return newFileContent
 }

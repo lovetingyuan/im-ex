@@ -127,7 +127,13 @@ const configSchema = {
     global: {
       type: 'object',
       additionalProperties: true,
-      default: {}
+      default: {
+        process: {
+          env: {
+            NODE_ENV: 'development'
+          }
+        }
+      }
     },
     head: {
       type: 'object',
@@ -228,8 +234,21 @@ function getFinalConfig(cp) {
     root: path.resolve(path.dirname(configPath), userConfig.server.root)
   }
   userConfig._entry = toAbsolutePath(userConfig.entry)
-  userConfig._head = {
-    favicon: toAbsolutePath(userConfig.head.favicon)
+  userConfig.head.favicon = toAbsolutePath(userConfig.head.favicon)
+  if (!userConfig.head.title) {
+    userConfig.head.title = 'imex'
+  }
+  if (!userConfig.global.process) {
+    userConfig.global.process = {
+      env: {
+        NODE_ENV: 'development'
+      }
+    }
+  }
+  if (!userConfig.global.process.env) {
+    userConfig.global.process.env = {
+      NODE_ENV: 'development'
+    }
   }
 
   Object.keys(userConfig.resolve.import).forEach(moduleName => {
