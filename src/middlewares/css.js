@@ -8,9 +8,11 @@ const postcss = require('postcss')
 
 const sendScript = (req, res, css, filePath) => {
   const importType = JSON.parse(req.query.importType)
-  let body = (css) => `${config._browserNameSpace}.setStyle(\`${css}\`, "${filePath}");
-    export const css = \`${css}\`;
-  `
+  let body = (css) => {
+    css = css.toString().replace(/`/g, '\\`')
+    return `${config._browserNameSpace}.setStyle(\`${css}\`, "${filePath}");
+      export const css = \`${css}\``
+  }
   if (importType.length) {
     let cssModuleJSON = {}
     postcss([

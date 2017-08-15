@@ -17,8 +17,17 @@ const styles = styles => {
 }
 // add global variables
 $('head').append(`<script>${Object.keys(config.global).map(varName => {
-  const value = config.global[varName]
-  return `var ${varName} = ${JSON.stringify(value)};`
+  let value = config.global[varName]
+  if (typeof value === 'function') {
+    value = value.toString()
+    if (value.indexOf('function') !== 0) {
+      value = 'function ' + value
+    }
+    return value
+  } else {
+    return `var ${varName} = ${JSON.stringify(value)};` 
+  }
+ 
 }).join('\n')}</script>`)
 // add favicon
 $('head').append(`<link rel="shortcut icon" type="image/ico" href="${config._head.favicon}"/>`)

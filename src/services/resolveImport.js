@@ -145,13 +145,41 @@ function resolveImporter(importer, currentPath) {
   return meta
 }
 
-function convertImportByAst(code, filePath, depCollection) {
-  const ast = babylon.parse(code, {
+const babylonConf = {
     sourceType: 'module',
-    allowImportExportEverywhere: true,
-    plugins: ['jsx', 'objectRestSpread', 'classProperties', 'asyncGenerators', 'dynamicImport']
-  })
+    allowImportExportEverywhere: false,
+    plugins: [
+      'jsx', 
+      'typescript', 
+      'flow', 
+      'objectRestSpread', 
+      'classProperties', 
+      'asyncGenerators', 
+      'dynamicImport'
+    ]
+  }
+
+function convertImportByAst(code, filePath, depCollection) {
+  const ast = babylon.parse(code, babylonConf)
+  let top
   traverse(ast, {
+    Program(path) {
+      if (top) return
+      top = path
+    },
+    CallExpression(path) { // dynamic import: import('./components')
+      if (path.node.callee.type === 'Import') {
+        const { name } = top.scope.generateUidIdentifier()
+        const importer = path.node.arguments[0].value.trim()
+        path.replaceWithSourceString(`Promise.resolve(${name})`)
+        top.node.body.unshift(
+          t.importDeclaration(
+            [ t.importDefaultSpecifier(t.identifier(name)) ],
+            t.stringLiteral(importer)
+          )
+        )
+      }
+    },
     ImportDeclaration(path) {
       let importStr, type = []
       if (t.isStringLiteral(path.node.source)) {
@@ -181,7 +209,6 @@ function convertImportByAst(code, filePath, depCollection) {
       })
       if (importStr === 'babel-polyfill') {
         path.replaceWith(t.stringLiteral('babel-polyfill'));
-        // path.node.source.value += '?__imex__=__imex__&moduleType=ignore'
         return
       }
       const importerResolved = resolveImporter(importStr, filePath)
@@ -212,11 +239,7 @@ function umdToModule(code, importName, importType) {
     newFileContent = exportConf(code, importName, importType)
   } else if (typeof exportConf === 'string') {
     const modules = importType.map(({ type, value }) => {
-      if (type === 'module') {
-        return `export const ${value} = ${exportConf}.${value};`
-      } else {
-        return ''
-      }
+      return type === 'module' ? `export const ${value} = ${exportConf}.${value};` : ''
     }).join('\n')
     newFileContent = `;(function(){${code}}).call(window);
       ${modules}; export default ${exportConf};`

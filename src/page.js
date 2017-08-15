@@ -4,7 +4,9 @@ function page() {
     win.global = win
   }
   win.module = win.module || {}
-  
+  win.require = function(pathStr) {
+    console.warning(`sorry, commonjs is not supported by browser, do not use "require('${pathStr}')"`)
+  }
 
   win.addEventListener('error', function(e) {
     // console.error('page error', e);
