@@ -17,8 +17,11 @@ module.exports = function watchChange(dirs, callback) {
       }
       clearTimeout(changedFile.timer)
       changedFile.timer = setTimeout(() => {
+        clearTimeout(changedFile.timer)
         const changedList = Object.keys(changedFile.list)
-          .map(v => slash(path.join(dir, v)))
+          .map(v => {
+            return v[0] === '.' ? null : slash(path.join(dir, v))
+          }).filter(v => v)
         changedFile.list = {}
         callback(changedList)
       }, 1000)

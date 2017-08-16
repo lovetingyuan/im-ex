@@ -7,6 +7,8 @@ function page() {
   win.require = function(pathStr) {
     console.warning(`sorry, commonjs is not supported by browser, do not use "require('${pathStr}')"`)
   }
+  if (!win.process) win.process = { env: { NODE_ENV: 'development' } }
+  if (!win.process.env) win.process.env = { NODE_ENV: 'development' }
 
   win.addEventListener('error', function(e) {
     // console.error('page error', e);
@@ -49,6 +51,7 @@ function page() {
   }
   es.onmessage = function (e) {
     const data = JSON.parse(e.data)
+    console.log('sse', data)
     if (data.type === 'hotreload') {
       reload()
     } else if (data.type === 'reload') {

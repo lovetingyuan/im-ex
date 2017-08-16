@@ -8,7 +8,7 @@ module.exports = { // you can also export a function that returns a config objec
     root: './', // relative path to this config file, required
     host: '0.0.0.0', // server host, you can spec ip or "localhost", default: localhost
     port: 8080, // server port, default: 8080
-    https: false, 
+    https: false,
     index: './public/index.html', // default ./index.html
     reload: 'hot', // true, false, 'hot', default: 'hot'
     headers: {}, // √
@@ -18,24 +18,37 @@ module.exports = { // you can also export a function that returns a config objec
     setup(app) {  
       // app.get()  √
     },
+    watch: './src',
   },
   entry: './src/index.js', // 暂时只支持一个entry文件
   resolve: {
+    module: './node_modules',
     import: {
       react: {
         // if you omit export, then you can only use: import 'moduleName';
         // path must relative server.root and under it, or throw an error
-        path: './node_modules/react/dist/react.js',
-        export: 'React' // global namespace
+        path: '~dist/react.js',
+        export: 'React', // global namespace
       },
       'react-dom': {
-        path: './node_modules/react-dom/react-dom.js',
-        export: 'ReactDOM'
+        path: '~dist/react-dom.js',
+        export: 'ReactDOM',
+        // export may be a function, will receive a param as the file content
+        // the return value will be treated as the es module content
+        // so "export: 'ReactDOM'" is equal to 
+        // export(code) { 
+        //  return `(function(){\n${code};\n}).call(window);
+        //   export default ReactDOM;` 
+        // }
       },
+      // when the value is a string, we think it is a standard es module, 
+      // but we do not parse the import, just use it directly
+      redux: '~es/index.js',
+      'lodash-es': './node_modules/lodash-es/',
       // eg: import Header from 'comp/Header', will resolve ./src/components/Header
-      // if it is a file, then use it, if it is a dir, 
+      // if it is a file, then use it, if it is a dir,
       // then use the ./src/components/Header/index.js(or jsx css ...)
-      'comp': './src/components', // will resolve to relative to server.root starting with '/'
+      comp: './src/components/', // will resolve to relative to server.root starting with '/'
     },
     exts: [
       'js', 'jsx', 'css', 'scss', 'json' // default is ['js']

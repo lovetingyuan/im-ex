@@ -24,8 +24,12 @@ function resolveFile(pathStr, dir = config._server.root) {
   pathStr = path.resolve(dir, pathStr)
   if (fs.existsSync(pathStr)) {
     let stat = fs.statSync(pathStr)
-    if (stat.isFile())
-      return slash('/' + path.relative(config._server.root, pathStr))
+    if (stat.isFile()) {
+      return {
+        importer: slash('/' + path.relative(config._server.root, pathStr)),
+        filePath: pathStr
+      }
+    }
   }
   const resolve = index => {
     for (let i = 0; i < config.resolve.exts.length; i++) {
@@ -49,7 +53,10 @@ function resolveFile(pathStr, dir = config._server.root) {
   if (!ret) {
     handleError(`${pathStr} not found`)
   }
-  return '/' + slash(path.relative(config._server.root, ret))
+  return {
+    importer: '/' + slash(path.relative(config._server.root, ret)),
+    filePath: ret
+  }
 }
 
 /**
@@ -83,7 +90,7 @@ function resolveImporter(importer, currentPath) {
     importPath = _importPath
   }
   const meta = {
-    __imex__: '__imex__',
+    __imex__: 'imex',
     query,
     importStr: importPath,
     // currentPath,
@@ -97,8 +104,9 @@ function resolveImporter(importer, currentPath) {
   if (importPath[0] === '.' || importPath[0] === '/') {
     let contextDir = importPath[0] === '.' ? path.dirname(currentPath) : config._server.root
     // meta.filePath = filePath
-    meta.importer = resolveFile(importPath, contextDir)
-    meta.moduleType = 'module'
+    Object.assign(meta, resolveFile(importPath, contextDir), {
+      moduleType: 'module'
+    })
   } else { // third module
     /**
      *'react-intl': { // react-intl, react-intl/locals/en
@@ -111,39 +119,31 @@ function resolveImporter(importer, currentPath) {
       components: './app/components',   components/App
      */
     const resolveImport = config.resolve.import
-    let moduleName = importPath
-
-    if (importPath.indexOf('/') > 0) {
-      moduleName = importPath.split('/')[0]
-      if (!(moduleName in resolveImport)) {
-        error(importPath)
-      }
-      if (typeof resolveImport[moduleName] === 'object') {
-        let _path = resolveImport[moduleName].path.substr(1)
-        _path = _path.substr(0, _path.indexOf('node_modules'))
-        _path = path.posix.join(_path, 'node_modules', importPath)
-        meta.importer = resolveFile(_path)
-        meta.moduleType = 'aliasThirdModule'
-      } else {
-        let _path = resolveImport[moduleName]
-        _path = path.posix.join(_path.substr(1), importPath.substr(moduleName.length + 1))
-        meta.importer = resolveFile(_path)
-        if (/node_modules\//.test(_path)) {
-          meta.moduleType = 'aliasThirdModule'
-        } else {
-          meta.moduleType = 'aliasModule'
-        }
-      }
+    let moduleName = importPath.split('/')[0]
+    if (!(moduleName in resolveImport)) error(importPath)
+    const resolved = resolveImport[moduleName]
+    let resolvedPath, exporter
+    const modulePath = config.resolve.module.substr(1)
+    if (typeof resolved === 'object') {
+      resolvedPath = resolved.path.substr(1)
+      exporter = resolved.export
     } else {
-      if (!(moduleName in resolveImport)) {
-        error(moduleName)
-      }
-      if (typeof resolveImport[moduleName] === 'string') {
-        meta.importer = resolveImport[moduleName]
-      } else {
-        meta.importer = resolveImport[importPath].path
-      }
-      meta.moduleType = 'thirdModule'
+      resolvedPath = resolved.substr(1)
+    }
+    if (exporter) {
+      Object.assign(meta, resolveFile(resolvedPath), {
+        moduleType: 'thirdUMDModule'
+      })
+    } else {
+      /**
+       * redux: '~es/index.js',
+       * comp: 'src/components/',
+       * 'lodash-es': '~'
+       */
+      let _path = path.posix.join(resolvedPath, importPath.substr(moduleName.length + 1))
+      Object.assign(meta, resolveFile(_path), {
+        moduleType: /node_modules\//.test(_path) ? 'thirdESModule' : 'aliasModule'
+      })
     }
   }
   return meta
@@ -248,6 +248,7 @@ function convertImportByAst(code, filePath, depCollection) {
       const queryStr = '?' + querystring.stringify(importerResolved)
       path.node.source.value = importerResolved.importer + queryStr
       if (['module', 'aliasModule'].includes(importerResolved.moduleType)) {
+        // let stat = fs.statSync(importerResolved.filePath)
         path.node.source.value += '&_t=' + Date.now()
       }
     }

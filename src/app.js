@@ -57,29 +57,34 @@ const applyMiddlewares = config => {
     if (!Array.isArray(fileTypes)) fileTypes = [fileTypes]
     return new RegExp('^\\/.+?\\.(' + fileTypes.join('|') + ')$')
   }
-  config.forEach(({ exts, names }) => {
+  config.forEach(({ exts, middlewares }) => {
     app.use(
       getReg(exts),
-      names.map(name => require('./middlewares/' + name))
+      middlewares.map(name => require('./middlewares/' + name))
     )
   })
 }
 applyMiddlewares([{
   exts: ['js', 'jsx', 'coffee'],
-  names: ['script', 'resolve']
+  middlewares: ['script', 'resolve']
 }, {
   exts: ['css', 'scss', 'sass', 'less', 'styl'],
-  names: ['css']
+  middlewares: ['css']
 }, {
   exts: ['json', 'json5'],
-  names: ['json']
+  middlewares: ['json']
 }, {
   exts: ['txt'],
-  names: ['raw']
+  middlewares: ['raw']
 }, {
   exts: ['jpg', 'jpeg', 'ico', 'png', 'gif', 'svg', 'webp', 'mp3', 'mp4'],
-  names: ['file']
-}])
+  middlewares: ['file']
+}, 
+// {
+//   exts: ['html', 'md', 'pug', 'hbs'],
+//   middlewares: ['template']
+// }
+])
 
 app.use(express.static(config._server.root));
 // catch 404 and forward to error handler

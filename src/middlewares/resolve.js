@@ -21,12 +21,10 @@ module.exports = function (req, res, next) {
       ret = `export default {}`
     } else if (moduleType === 'entryModule') {
       ret = convertImportByAst(fileContent, path.resolve(config._server.root, req.locals.reqPath))
-    } else if (moduleType === 'aliasModule' || moduleType === 'module') {
+    } else if (['thirdESModule', 'aliasModule', 'module'].includes(moduleType)) {
       ret = convertImportByAst(fileContent, req.locals.filePath)
-    } else if (moduleType === 'thirdModule') {
+    } else if (moduleType === 'thirdUMDModule') {
       ret = umdToModule(fileContent, importStr, JSON.parse(importType))
-    } else if (moduleType === 'aliasThirdModule') {
-      ret = res.body
     }
     sendScript(res, ret)
   } catch(e) {

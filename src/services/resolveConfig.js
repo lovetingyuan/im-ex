@@ -61,6 +61,15 @@ const configSchema = {
           type: 'boolean',
           default: true
         }, // open browser, default: true   √
+        watch: {
+          oneOf: [{
+            type: 'string'
+          }, {
+            type: 'array',
+            items: {type: 'string'}
+          }],
+          default: './',
+        }
         // log: '', // 'page', 'console', where to show server error, default is 'console'
         // setup(app) {
         //   // app.get()  √
@@ -75,6 +84,9 @@ const configSchema = {
       additionalProperties: false,
       default: {},
       properties: {
+        module: {
+          type: 'string',
+        },
         import: {
           type: 'object',
           default: {},
@@ -228,35 +240,46 @@ function getFinalConfig(cp) {
     })
   }
 
+  
+
   userConfig._browserNameSpace = '__IMEX__'
   userConfig._sse = '__sse__'
   userConfig._server = {
     root: path.resolve(path.dirname(configPath), userConfig.server.root)
   }
+  if (!userConfig.resolve.module) {
+    const modulePath = path.resolve(userConfig._server.root, 'node_modules')
+    const error = handleError.bind(null, 'you must specify the node_module path at "config.resolve.module"')
+    try {
+      const stat = fs.statSync(modulePath)
+      if (!stat.isDirectory()) error()
+    } catch(e) {
+      error()
+    }
+    userConfig.resolve.module = '/node_modules'
+  } else {
+    userConfig.resolve.module = toAbsolutePath(userConfig.resolve.module)
+  }
+
   userConfig._entry = toAbsolutePath(userConfig.entry)
   userConfig.head.favicon = toAbsolutePath(userConfig.head.favicon)
   if (!userConfig.head.title) {
     userConfig.head.title = 'imex'
   }
-  if (!userConfig.global.process) {
-    userConfig.global.process = {
-      env: {
-        NODE_ENV: 'development'
-      }
-    }
-  }
-  if (!userConfig.global.process.env) {
-    userConfig.global.process.env = {
-      NODE_ENV: 'development'
-    }
-  }
 
   Object.keys(userConfig.resolve.import).forEach(moduleName => {
-    const resolve = userConfig.resolve.import[moduleName]
+    let resolve = userConfig.resolve.import[moduleName]
     if (typeof resolve === 'string') {
+      if (resolve[0] === '~') {
+        resolve = path.posix.join(userConfig.resolve.module, moduleName, resolve.substr(1))
+      }
       userConfig.resolve.import[moduleName] = toAbsolutePath(resolve)
     } else {
-      userConfig.resolve.import[moduleName].path = toAbsolutePath(resolve.path)
+      let _path = resolve.path
+      if (_path[0] === '~') {
+        _path = path.posix.join(userConfig.resolve.module, moduleName, _path.substr(1))
+      }
+      userConfig.resolve.import[moduleName].path = toAbsolutePath(_path)
     }
   })
 
