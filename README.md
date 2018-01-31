@@ -1,4 +1,4 @@
-# im-ex
+# im-ex (not complete)
 use ECMAScript2015 standard module to develop an app
 
 ### config
